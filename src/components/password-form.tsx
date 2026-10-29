@@ -83,6 +83,8 @@ export function PasswordForm({
           name="password"
           type="password"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
           required
           spellCheck={false}
           aria-invalid={error != null}

@@ -8,8 +8,13 @@ export const FINALE_HEADER = "x-ht-finale";
 export type GateKind = "gate" | "finale";
 
 const DEFAULT_PASSWORDS: Record<GateKind, string> = {
-  gate: "pawprint-trail",
-  finale: "pawprint-trail-complete",
+  gate: "forleahkim",
+  finale: "dont.forget.to.smile.leah.kim",
+};
+
+const ACCEPTED_ALIASES: Record<GateKind, string[]> = {
+  gate: ["forleahkim", "pawprint-trail"],
+  finale: ["dont.forget.to.smile.leah.kim", "pawprint-trail-complete"],
 };
 
 function secretFor(kind: GateKind) {
@@ -25,8 +30,8 @@ export function passwordsReady(kind: GateKind) {
   return Boolean(secretFor(kind));
 }
 
-export function tokenFor(kind: GateKind) {
-  const secret = secretFor(kind);
+export function tokenFor(kind: GateKind, customSecret?: string) {
+  const secret = (customSecret ?? secretFor(kind)).trim().toLowerCase();
   if (!secret) return "";
   return createHmac("sha256", secret).update(`pawprint-trail:${kind}`).digest("hex");
 }
@@ -38,15 +43,29 @@ function sameHash(left: string, right: string) {
 }
 
 export function passwordMatches(kind: GateKind, attempt: string) {
-  const secret = secretFor(kind);
-  if (!secret || !attempt) return false;
-  return sameHash(attempt, secret);
+  if (!attempt) return false;
+  const cleanAttempt = attempt.trim().toLowerCase();
+  const secret = secretFor(kind).trim().toLowerCase();
+  if (sameHash(cleanAttempt, secret)) return true;
+
+  // Also accept fallback aliases (e.g. forleahkim or pawprint-trail)
+  for (const alias of ACCEPTED_ALIASES[kind]) {
+    if (sameHash(cleanAttempt, alias.toLowerCase())) return true;
+  }
+  return false;
 }
 
 export function cookieMatches(kind: GateKind, value: string | undefined) {
+  if (!value) return false;
   const expected = tokenFor(kind);
-  if (!expected || !value) return false;
-  return sameHash(value, expected);
+  if (expected && sameHash(value, expected)) return true;
+
+  // Also check tokens for accepted aliases
+  for (const alias of ACCEPTED_ALIASES[kind]) {
+    const aliasToken = tokenFor(kind, alias);
+    if (aliasToken && sameHash(value, aliasToken)) return true;
+  }
+  return false;
 }
 
 /** Secure cookies are dropped on http://localhost, so this follows the request, not NODE_ENV. */

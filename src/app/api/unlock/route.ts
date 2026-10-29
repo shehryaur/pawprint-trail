@@ -30,12 +30,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Try that once more." }, { status: 400 });
     }
     kind = body.kind === "finale" ? "finale" : "gate";
-    password = typeof body.password === "string" ? body.password.trim() : "";
+    password = typeof body.password === "string" ? body.password.trim().toLowerCase() : "";
     next = typeof body.next === "string" ? body.next : "";
   } else {
     const form = await request.formData();
     kind = form.get("kind") === "finale" ? "finale" : "gate";
-    password = String(form.get("password") ?? "").trim();
+    password = String(form.get("password") ?? "").trim().toLowerCase();
     next = String(form.get("next") ?? "");
   }
 
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   }
 
   const destination = pageUrl(kind === "finale" ? "/finale" : (safeNext(next) ?? "/"));
-  const token = tokenFor(kind);
+  const token = tokenFor(kind, password);
   const response = asJson
     ? NextResponse.json({ ok: true, token })
     : NextResponse.redirect(destination, 303);
