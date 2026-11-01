@@ -101,18 +101,20 @@ export async function writeSharedProgress(next: StoredProgress): Promise<StoredP
 }
 
 /** Record a visit timestamp in Supabase when the site is opened or unlocked, throttled to 5m. */
-export async function recordVisit(current?: StoredProgress): Promise<void> {
-  if (!progressConfigured()) return;
+export async function recordVisit(current?: StoredProgress): Promise<StoredProgress | null> {
+  if (!progressConfigured()) return null;
   try {
     const row = current ?? (await readSharedProgress());
     const last = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
     if (Date.now() - last > 5 * 60 * 1000) {
-      await writeSharedProgress({
+      return await writeSharedProgress({
         done: row.done,
         studyDates: row.studyDates,
       });
     }
+    return row;
   } catch (err) {
     console.error("Could not record visit:", err);
+    return null;
   }
 }

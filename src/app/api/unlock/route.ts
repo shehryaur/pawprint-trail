@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   if (kind === "gate") {
-    void recordVisit();
+    await recordVisit();
   }
 
   const destination = pageUrl(kind === "finale" ? "/finale" : (safeNext(next) ?? "/"));

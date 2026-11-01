@@ -43,9 +43,8 @@ export async function GET(request: Request) {
   if (!progressConfigured()) return json({ ok: false, configured: false }, 503);
   try {
     const row = await readSharedProgress();
-    // Record visit timestamp when opening the trail
-    void recordVisit(row);
-    return json(cleanSnapshot(row));
+    const updated = await recordVisit(row);
+    return json(cleanSnapshot(updated ?? row));
   } catch {
     return json({ ok: false }, 502);
   }
