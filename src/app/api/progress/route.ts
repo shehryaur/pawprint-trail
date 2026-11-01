@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookieMatches, GATE_COOKIE, GATE_HEADER } from "@/lib/auth";
-import { readSharedProgress, progressConfigured, writeSharedProgress } from "@/lib/progress-db";
+import { readSharedProgress, progressConfigured, writeSharedProgress, recordVisit } from "@/lib/progress-db";
 import { applyToggle, cleanSnapshot, parseProgressWrite } from "@/lib/progress-state";
 import { dateKey } from "@/lib/streak";
 
@@ -43,6 +43,8 @@ export async function GET(request: Request) {
   if (!progressConfigured()) return json({ ok: false, configured: false }, 503);
   try {
     const row = await readSharedProgress();
+    // Record visit timestamp when opening the trail
+    void recordVisit(row);
     return json(cleanSnapshot(row));
   } catch {
     return json({ ok: false }, 502);

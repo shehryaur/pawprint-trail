@@ -1,6 +1,7 @@
 export type ProgressSnapshot = {
   done: string[];
   studyDates: string[];
+  lastVisited?: string;
 };
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -80,9 +81,10 @@ export function applyToggle(current: ProgressSnapshot, slug: string, value: bool
   return { done, studyDates };
 }
 
-export function cleanSnapshot(row: { done: unknown; studyDates: unknown }): ProgressSnapshot {
+export function cleanSnapshot(row: { done: unknown; studyDates: unknown; updatedAt?: unknown }): ProgressSnapshot {
   return {
     done: keepValid(row.done, isLessonSlug, MAX_DONE),
     studyDates: keepValid(row.studyDates, isDateKey, MAX_DATES),
+    lastVisited: typeof row.updatedAt === "string" ? row.updatedAt : undefined,
   };
 }

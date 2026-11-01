@@ -9,6 +9,7 @@ import {
   tokenFor,
   type GateKind,
 } from "@/lib/auth";
+import { recordVisit } from "@/lib/progress-db";
 
 const wrongMessage = {
   gate: "That isn't the word. Ask the friend who sent you this trail.",
@@ -58,6 +59,10 @@ export async function POST(request: Request) {
 
   if (!passwordMatches(kind, password)) {
     return fail(401, wrongMessage[kind]);
+  }
+
+  if (kind === "gate") {
+    void recordVisit();
   }
 
   const destination = pageUrl(kind === "finale" ? "/finale" : (safeNext(next) ?? "/"));

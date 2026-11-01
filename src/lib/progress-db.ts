@@ -5,6 +5,7 @@ const PROGRESS_ID = process.env.PROGRESS_ROW_ID?.trim() || "main";
 export type StoredProgress = {
   done: string[];
   studyDates: string[];
+  updatedAt?: string;
 };
 
 function envValue(name: string) {
@@ -61,15 +62,19 @@ async function supabaseFetch(path: string, init: { method: string; prefer?: stri
 
 export async function readSharedProgress(): Promise<StoredProgress> {
   const response = await supabaseFetch(
-    `/progress?id=eq.${encodeURIComponent(PROGRESS_ID)}&select=done,study_dates&limit=1`,
+    `/progress?id=eq.${encodeURIComponent(PROGRESS_ID)}&select=done,study_dates,updated_at&limit=1`,
     { method: "GET" },
   );
   if (!response.ok) throw new Error("Could not read progress");
   const rows: unknown = await response.json();
   const row = Array.isArray(rows) ? rows[0] : null;
   if (!row || typeof row !== "object") return { done: [], studyDates: [] };
-  const record = row as { done?: unknown; study_dates?: unknown };
-  return { done: asStrings(record.done), studyDates: asStrings(record.study_dates) };
+  const record = row as { done?: unknown; study_dates?: unknown; updated_at?: unknown };
+  return {
+    done: asStrings(record.done),
+    studyDates: asStrings(record.study_dates),
+    updatedAt: typeof record.updated_at === "string" ? record.updated_at : undefined,
+  };
 }
 
 export async function writeSharedProgress(next: StoredProgress): Promise<StoredProgress> {
@@ -87,6 +92,27 @@ export async function writeSharedProgress(next: StoredProgress): Promise<StoredP
   const rows: unknown = await response.json();
   const row = Array.isArray(rows) ? rows[0] : null;
   if (!row || typeof row !== "object") return next;
-  const record = row as { done?: unknown; study_dates?: unknown };
-  return { done: asStrings(record.done), studyDates: asStrings(record.study_dates) };
+  const record = row as { done?: unknown; study_dates?: unknown; updated_at?: unknown };
+  return {
+    done: asStrings(record.done),
+    studyDates: asStrings(record.study_dates),
+    updatedAt: typeof record.updated_at === "string" ? record.updated_at : undefined,
+  };
+}
+
+/** Record a visit timestamp in Supabase when the site is opened or unlocked, throttled to 5m. */
+export async function recordVisit(current?: StoredProgress): Promise<void> {
+  if (!progressConfigured()) return;
+  try {
+    const row = current ?? (await readSharedProgress());
+    const last = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+    if (Date.now() - last > 5 * 60 * 1000) {
+      await writeSharedProgress({
+        done: row.done,
+        studyDates: row.studyDates,
+      });
+    }
+  } catch (err) {
+    console.error("Could not record visit:", err);
+  }
 }
