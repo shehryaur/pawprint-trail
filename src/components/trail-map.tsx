@@ -4,17 +4,20 @@ import Link from "next/link";
 import { days, lessons } from "@/content/trail";
 import { dayLessons, dayMinutes, sittingPlan } from "@/lib/plan";
 import { useProgress } from "@/components/progress-store";
+import { TrailNotice } from "@/components/trail-notice";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "cn";
 
-export function TrailMap() {
+export function TrailMap({ notice }: { notice?: string }) {
   const { done, studyDates, streak, studiedToday } = useProgress();
   const { current, wait, rest } = sittingPlan(done, studiedToday, studyDates);
   const next = current ? dayLessons(current).find((lesson) => !done.includes(lesson.slug)) : undefined;
   const finishedAll = done.length === lessons.length;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
+      {notice ? <TrailNotice message={notice} /> : null}
+
       <section className="rounded-[2rem] border border-border bg-card/85 p-6 shadow-sm sm:p-8">
         <h1 className="text-3xl leading-tight text-balance break-words sm:text-5xl">Twenty study days</h1>
         <p className="mt-3 max-w-xl text-base leading-7 text-foreground/80 sm:text-lg sm:leading-8">
@@ -97,7 +100,6 @@ export function TrailMap() {
           );
         })}
       </div>
-
     </div>
   );
 }

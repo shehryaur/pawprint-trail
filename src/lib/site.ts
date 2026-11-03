@@ -15,6 +15,9 @@ export const site = {
     "The bear is doing a victory hop. He saved this quiet den for the day you finished.",
   finaleNext:
     "You are in a better position now to go through the next ideas by yourself. Take them one at a time. You already know how to learn.",
+  trailNotice:
+    process.env.TRAIL_NOTICE?.trim() ||
+    "Day 2 done! 🐾 Make sure to update the builder on how the lessons are feeling.",
 };
 
 export function learnerLabel() {
