@@ -78,16 +78,16 @@ export function PasswordForm({
       {returnTo ? <input type="hidden" name="next" value={returnTo} /> : null}
 
       {kind === "gate" ? (
-        <div className="space-y-2 rounded-2xl border border-[#e4cc9f] bg-[#fffaf0] p-4 text-left shadow-xs">
-          <label htmlFor="gate-weekend-note" className="block text-sm font-semibold text-[#53361a]">
+        <div className="space-y-2 rounded-2xl border border-[#e4cc9f] bg-[#fffaf0] p-4 text-center shadow-xs">
+          <label htmlFor="gate-weekend-note" className="block text-center text-sm font-semibold text-[#53361a]">
             What are your plans for the weekend?
           </label>
           <textarea
             id="gate-weekend-note"
             name="weekendNote"
             rows={2}
-            placeholder="Any fun plans?"
-            className="w-full resize-none rounded-xl border border-border/80 bg-white/95 p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[#c4843e] focus:outline-none focus:ring-2 focus:ring-[#c4843e]/30"
+            placeholder="Any plans?"
+            className="w-full resize-none rounded-xl border border-border/80 bg-white/95 p-3 text-left text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[#c4843e] focus:outline-none focus:ring-2 focus:ring-[#c4843e]/30"
           />
         </div>
       ) : null}
