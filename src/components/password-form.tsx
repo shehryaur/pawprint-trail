@@ -33,7 +33,9 @@ export function PasswordForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const password = String(new FormData(event.currentTarget).get("password") ?? "").trim();
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get("password") ?? "").trim();
+    const weekendNote = String(formData.get("weekendNote") ?? "").trim();
     setPending(true);
     setError(null);
 
@@ -41,7 +43,7 @@ export function PasswordForm({
       const response = await fetch("/api/unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, password, next: returnTo ?? "" }),
+        body: JSON.stringify({ kind, password, weekendNote, next: returnTo ?? "" }),
       });
       const data = (await response.json().catch(() => null)) as { message?: string; token?: string } | null;
       if (!response.ok || !data?.token) {
@@ -74,7 +76,23 @@ export function PasswordForm({
     >
       <input type="hidden" name="kind" value={kind} />
       {returnTo ? <input type="hidden" name="next" value={returnTo} /> : null}
-      <div className="space-y-2">
+
+      {kind === "gate" ? (
+        <div className="space-y-2 rounded-2xl border border-[#e4cc9f] bg-[#fffaf0] p-4 text-left shadow-xs">
+          <label htmlFor="gate-weekend-note" className="block text-sm font-semibold text-[#53361a]">
+            What are your plans for the weekend?
+          </label>
+          <textarea
+            id="gate-weekend-note"
+            name="weekendNote"
+            rows={2}
+            placeholder="Any fun plans?"
+            className="w-full resize-none rounded-xl border border-border/80 bg-white/95 p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[#c4843e] focus:outline-none focus:ring-2 focus:ring-[#c4843e]/30"
+          />
+        </div>
+      ) : null}
+
+      <div className="space-y-2 text-left">
         <label htmlFor={`${kind}-password`} className="text-sm font-semibold">
           Password
         </label>
@@ -98,6 +116,7 @@ export function PasswordForm({
           </p>
         ) : null}
       </div>
+
       {error ? (
         <p role="alert" className="rounded-2xl bg-secondary px-3 py-2 text-sm text-secondary-foreground">
           {error}

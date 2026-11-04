@@ -9,7 +9,7 @@ import {
   tokenFor,
   type GateKind,
 } from "@/lib/auth";
-import { recordVisit } from "@/lib/progress-db";
+import { recordVisit, recordWeekendPlan } from "@/lib/progress-db";
 
 const wrongMessage = {
   gate: "That isn't the word. Ask the friend who sent you this trail.",
@@ -21,10 +21,11 @@ export async function POST(request: Request) {
   const asJson = contentType.includes("application/json");
   let kind: GateKind = "gate";
   let password = "";
+  let weekendNote = "";
   let next = "";
 
   if (asJson) {
-    let body: { kind?: string; password?: string; next?: string };
+    let body: { kind?: string; password?: string; weekendNote?: string; next?: string };
     try {
       body = await request.json();
     } catch {
@@ -32,11 +33,13 @@ export async function POST(request: Request) {
     }
     kind = body.kind === "finale" ? "finale" : "gate";
     password = typeof body.password === "string" ? body.password.trim().toLowerCase() : "";
+    weekendNote = typeof body.weekendNote === "string" ? body.weekendNote.trim() : "";
     next = typeof body.next === "string" ? body.next : "";
   } else {
     const form = await request.formData();
     kind = form.get("kind") === "finale" ? "finale" : "gate";
     password = String(form.get("password") ?? "").trim().toLowerCase();
+    weekendNote = String(form.get("weekendNote") ?? "").trim();
     next = String(form.get("next") ?? "");
   }
 
@@ -63,6 +66,9 @@ export async function POST(request: Request) {
 
   if (kind === "gate") {
     await recordVisit();
+    if (weekendNote) {
+      await recordWeekendPlan(weekendNote);
+    }
   }
 
   const destination = pageUrl(kind === "finale" ? "/finale" : (safeNext(next) ?? "/"));

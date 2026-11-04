@@ -118,3 +118,39 @@ export async function recordVisit(current?: StoredProgress): Promise<StoredProgr
     return null;
   }
 }
+
+/** Record Leah's response to the weekend plans question on the gate card. */
+export async function recordWeekendPlan(note: string): Promise<void> {
+  if (!progressConfigured() || !note.trim()) return;
+  try {
+    const cleanNote = note.trim();
+    const existing = await supabaseFetch(
+      `/progress?id=eq.weekend_plan&select=done&limit=1`,
+      { method: "GET" },
+    );
+    let previousNotes: string[] = [];
+    if (existing.ok) {
+      const rows: unknown = await existing.json();
+      if (Array.isArray(rows) && rows[0] && typeof rows[0] === "object") {
+        const record = rows[0] as { done?: unknown };
+        if (Array.isArray(record.done)) {
+          previousNotes = record.done.filter((x): x is string => typeof x === "string");
+        }
+      }
+    }
+    const allNotes = [...previousNotes, cleanNote];
+
+    await supabaseFetch("/progress?on_conflict=id", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: JSON.stringify({
+        id: "weekend_plan",
+        done: allNotes,
+        study_dates: [new Date().toISOString().slice(0, 10)],
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.error("Could not record weekend plan:", err);
+  }
+}
