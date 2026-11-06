@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useDenLock } from "@/components/den-switch";
 import { rememberPass } from "@/lib/pass-memory";
@@ -28,16 +28,30 @@ export function PasswordForm({
   const router = useRouter();
   const setLocked = useDenLock();
   const [error, setError] = useState<string | null>(denied ? deniedCopy[kind] : null);
+  const [noteError, setNoteError] = useState(false);
   const [pending, setPending] = useState(false);
   const [shake, setShake] = useState(false);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get("password") ?? "").trim();
     const weekendNote = String(formData.get("weekendNote") ?? "").trim();
+
+    // Compulsory check: weekend note must be filled to enter
+    if (kind === "gate" && !weekendNote) {
+      setNoteError(true);
+      setError("Please share your plans for the weekend above to enter.");
+      setShake(false);
+      requestAnimationFrame(() => setShake(true));
+      noteRef.current?.focus();
+      return;
+    }
+
     setPending(true);
     setError(null);
+    setNoteError(false);
 
     try {
       const response = await fetch("/api/unlock", {
@@ -78,17 +92,42 @@ export function PasswordForm({
       {returnTo ? <input type="hidden" name="next" value={returnTo} /> : null}
 
       {kind === "gate" ? (
-        <div className="space-y-2 rounded-2xl border border-[#e4cc9f] bg-[#fffaf0] p-4 text-center shadow-xs">
-          <label htmlFor="gate-weekend-note" className="block text-center text-sm font-semibold text-[#53361a]">
+        <div
+          className={`space-y-2 rounded-2xl border p-4 text-center shadow-xs transition-colors duration-200 ${
+            noteError
+              ? "border-red-500 bg-red-50/70 ring-2 ring-red-400/30"
+              : "border-[#e4cc9f] bg-[#fffaf0]"
+          }`}
+        >
+          <label
+            htmlFor="gate-weekend-note"
+            className={`block text-center text-sm font-semibold transition-colors ${
+              noteError ? "text-red-700" : "text-[#53361a]"
+            }`}
+          >
             What are your plans for the weekend?
           </label>
           <textarea
+            ref={noteRef}
             id="gate-weekend-note"
             name="weekendNote"
             rows={2}
             placeholder="Any plans?"
-            className="w-full resize-none rounded-xl border border-border/80 bg-white/95 p-3 text-left text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[#c4843e] focus:outline-none focus:ring-2 focus:ring-[#c4843e]/30"
+            onChange={() => {
+              if (noteError) setNoteError(false);
+              if (error) setError(null);
+            }}
+            className={`w-full resize-none rounded-xl border p-3 text-left text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:outline-none focus:ring-2 ${
+              noteError
+                ? "border-red-400 bg-white focus:border-red-500 focus:ring-red-400/30"
+                : "border-border/80 bg-white/95 focus:border-[#c4843e] focus:ring-[#c4843e]/30"
+            }`}
           />
+          {noteError ? (
+            <p role="alert" className="text-xs font-semibold text-red-600 animate-in fade-in duration-200">
+              Please share your plans to come in.
+            </p>
+          ) : null}
         </div>
       ) : null}
 

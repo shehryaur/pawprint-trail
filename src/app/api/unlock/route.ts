@@ -60,15 +60,17 @@ export async function POST(request: Request) {
     return fail(503, "This trail is not open yet. The passwords still need to be set.");
   }
 
+  if (kind === "gate" && !weekendNote) {
+    return fail(400, "Please share your plans for the weekend first.");
+  }
+
   if (!passwordMatches(kind, password)) {
     return fail(401, wrongMessage[kind]);
   }
 
   if (kind === "gate") {
     await recordVisit();
-    if (weekendNote) {
-      await recordWeekendPlan(weekendNote);
-    }
+    await recordWeekendPlan(weekendNote);
   }
 
   const destination = pageUrl(kind === "finale" ? "/finale" : (safeNext(next) ?? "/"));
