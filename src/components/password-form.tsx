@@ -42,7 +42,7 @@ export function PasswordForm({
     // Compulsory check: weekend note must be filled to enter
     if (kind === "gate" && !weekendNote) {
       setNoteError(true);
-      setError("Please share your plans for the weekend above to enter.");
+      setError(null);
       setShake(false);
       requestAnimationFrame(() => setShake(true));
       noteRef.current?.focus();
@@ -123,11 +123,6 @@ export function PasswordForm({
                 : "border-border/80 bg-white/95 focus:border-[#c4843e] focus:ring-[#c4843e]/30"
             }`}
           />
-          {noteError ? (
-            <p role="alert" className="text-xs font-semibold text-red-600 animate-in fade-in duration-200">
-              Please share your plans to come in.
-            </p>
-          ) : null}
         </div>
       ) : null}
 
